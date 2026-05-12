@@ -161,10 +161,11 @@
     const REFRESH_MS = 1000;
 
     const SCENARIOS = [
-      { id:'noisy_neighbor',  label:'Noisy Neighbor',  color:'#f59e0b', desc:'2 abusers → tier congestion → latency spike for all users' },
-      { id:'product_launch',  label:'Product Launch',  color:'#3b82f6', desc:'10× spike on US after 30s' },
-      { id:'global_steady',   label:'Global Steady',   color:'#10b981', desc:'Multi-region with diurnal' },
-      { id:'region_failover', label:'Region Failover', color:'#a855f7', desc:'Simulate gateway-us crash' },
+      { id:'noisy_neighbor',     label:'Noisy Neighbor',     color:'#f59e0b', desc:'2 abusers → tier congestion → latency spike for all users' },
+      { id:'product_launch',     label:'Product Launch',     color:'#3b82f6', desc:'10× spike on US after 30s' },
+      { id:'global_steady',      label:'Global Steady',      color:'#10b981', desc:'Multi-region with diurnal' },
+      { id:'region_failover',    label:'Region Failover',    color:'#a855f7', desc:'Simulate gateway-us crash' },
+      { id:'global_quota_bypass',label:'Global Quota Bypass',color:'#ec4899', desc:'Local-only vs geo-distributed quota enforcement' },
     ];
 
     // ─── Fetch helpers ────────────────────────────────────────────────────────
@@ -196,6 +197,11 @@
     async function fetchLatency() {
       const r = await fetch(`${API}/api/user-latency?region=us&tier=free`);
       if (!r.ok) throw new Error('latency fetch failed');
+      return r.json();
+    }
+    async function fetchDemoResults() {
+      const r = await fetch(`${API}/api/demo/results`);
+      if (!r.ok) throw new Error('demo results fetch failed');
       return r.json();
     }
 
@@ -689,6 +695,132 @@
                 const pct=Math.round((c.total/max)*100), tc=TIER_COLOR[c.tier]||'#888';
                 return <div key={i} style={{ padding:'8px 20px', borderBottom:'1px solid #1c1c1c' }}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}><div style={{ display:'flex', alignItems:'center', gap:8 }}><span style={{ fontSize:10, color:'#2e2e2e', width:18, textAlign:'right' }}>{i+1}</span><span style={{ fontSize:12, color:'#ccc', fontFamily:'monospace' }}>{c.user_id}</span><span style={{ fontSize:10, color:tc, fontWeight:600 }}>{c.tier}</span></div><div style={{ display:'flex', alignItems:'center', gap:10 }}><span style={{ fontSize:10, color:'#383838' }}>{[c.us>0&&`US:${c.us}`,c.eu>0&&`EU:${c.eu}`,c.asia>0&&`AS:${c.asia}`].filter(Boolean).join(' ')}</span><span style={{ fontSize:12, color:'#aaa', fontFamily:'monospace', minWidth:48, textAlign:'right' }}>{fmtNum(c.total)}</span></div></div><div style={{ height:3, background:'#1e1e1e', borderRadius:2, marginLeft:26 }}><div style={{ height:'100%', width:`${pct}%`, background:'#3b82f6', borderRadius:2, transition:'width 0.5s ease' }}/></div></div>;
               })}</div>}
+        </Panel>
+      );
+    }
+
+    // ─── BypassPanel ──────────────────────────────────────────────────────────
+    // Renders results from the global_quota_bypass demo — Phase 1 (local-only)
+    // vs Phase 2 (geo-distributed) side by side. Polled from /api/demo/results.
+    function BypassRegionRow({ region, accepted, rejected, color }) {
+      const aColor = accepted == null ? '#3a3a3a' : color;
+      return (
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                      padding:'7px 14px', borderBottom:'1px solid #1c1c1c', fontSize:12 }}>
+          <span style={{ color:'#888', fontWeight:600, letterSpacing:'0.05em' }}>{region.toUpperCase()}</span>
+          <div style={{ display:'flex', gap:14, fontFamily:'monospace' }}>
+            <span style={{ color:aColor }}>acc: <strong style={{ color:aColor }}>{accepted == null ? '—' : accepted}</strong></span>
+            <span style={{ color:'#666' }}>rej: <strong style={{ color:rejected ? '#ef4444' : '#3a3a3a' }}>{rejected == null ? '—' : rejected}</strong></span>
+          </div>
+        </div>
+      );
+    }
+
+    function BypassColumn({ title, subtitle, regions, totalAccepted, totalRejected, color, footerLabel, footerOk, footerReason }) {
+      const safe = regions || { us: null, eu: null, asia: null };
+      return (
+        <div style={{ background:'#0a0a0a', border:'1px solid #1c1c1c', borderRadius:6, overflow:'hidden' }}>
+          <div style={{ padding:'10px 14px', borderBottom:'1px solid #1c1c1c', background:`${color}0a` }}>
+            <div style={{ fontSize:11, color:color, fontWeight:700, letterSpacing:'0.06em' }}>{title}</div>
+            <div style={{ fontSize:9, color:'#555', marginTop:2 }}>{subtitle}</div>
+          </div>
+          <BypassRegionRow region="us"   accepted={safe.us?.accepted   ?? null} rejected={safe.us?.rejected   ?? null} color={color}/>
+          <BypassRegionRow region="eu"   accepted={safe.eu?.accepted   ?? null} rejected={safe.eu?.rejected   ?? null} color={color}/>
+          <BypassRegionRow region="asia" accepted={safe.asia?.accepted ?? null} rejected={safe.asia?.rejected ?? null} color={color}/>
+          <div style={{ padding:'10px 14px', borderTop:'1px solid #1c1c1c', background:'#070707' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontFamily:'monospace' }}>
+              <span style={{ color:'#777' }}>total accepted</span>
+              <span style={{ color:color, fontWeight:700 }}>{totalAccepted ?? '—'}</span>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, fontFamily:'monospace', marginTop:3 }}>
+              <span style={{ color:'#777' }}>total rejected</span>
+              <span style={{ color:'#ef4444' }}>{totalRejected ?? '—'}</span>
+            </div>
+            {footerReason && (
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, fontFamily:'monospace', marginTop:4 }}>
+                <span style={{ color:'#666' }}>reject reason</span>
+                <span style={{ color:'#f59e0b' }}>{footerReason}</span>
+              </div>
+            )}
+            {footerLabel && (
+              <div style={{ marginTop:8, padding:'5px 8px', borderRadius:3,
+                            fontSize:10, fontWeight:700, textAlign:'center', letterSpacing:'0.05em',
+                            color: footerOk ? '#10b981' : '#ef4444',
+                            background: footerOk ? '#10b98115' : '#ef444415',
+                            border: `1px solid ${footerOk ? '#10b98140' : '#ef444440'}` }}>
+                {footerLabel}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function BypassPanel({ data, loading }) {
+      const status = data?.status;
+      const phase  = data?.current_phase;
+      const cfg    = data?.config;
+      const p1     = data?.phase1;
+      const p2     = data?.phase2;
+
+      const isIdle = !cfg || status === 'idle';
+
+      let badge;
+      if (isIdle) {
+        badge = <span style={{ fontSize:10, color:'#3a3a3a' }}>Idle — run "Global Quota Bypass" scenario</span>;
+      } else if (status === 'running') {
+        badge = <span style={{ fontSize:10, color:'#3b82f6', display:'flex', alignItems:'center', gap:6 }}>
+          <GradientSpinner size={10}/>Running · {phase}
+        </span>;
+      } else if (status === 'error') {
+        badge = <span style={{ fontSize:10, color:'#ef4444' }}>Error: {data?.error || 'unknown'}</span>;
+      } else if (status === 'complete') {
+        badge = <span style={{ fontSize:10, color:'#10b981' }}>Complete</span>;
+      }
+
+      const globalLimit = cfg?.global_limit ?? 300;
+      const attempts    = cfg?.attempts_per_region ?? 250;
+
+      return (
+        <Panel>
+          <PanelHeader title="Global Quota Bypass Demo" badge={badge}/>
+          {isIdle ? (
+            <div style={{ padding:'32px 20px', textAlign:'center', color:'#3a3a3a', fontSize:13 }}>
+              Start the <span style={{ color:'#ec4899' }}>Global Quota Bypass</span> scenario from the sidebar
+              to see local-only vs geo-distributed enforcement compared side-by-side.
+            </div>
+          ) : (
+            <div style={{ padding:'14px 16px' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'#666', marginBottom:12, fontFamily:'monospace' }}>
+                <span>user: <span style={{ color:'#aaa' }}>{cfg?.user}</span></span>
+                <span>global limit: <span style={{ color:'#aaa' }}>{globalLimit}/min</span></span>
+                <span>attempted: <span style={{ color:'#aaa' }}>{attempts}/region = {attempts * 3} total</span></span>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <BypassColumn
+                  title="LOCAL-ONLY MODE"
+                  subtitle="3 independent rate limiters · no coordination"
+                  regions={p1?.regions}
+                  totalAccepted={p1?.total_accepted}
+                  totalRejected={p1?.total_rejected}
+                  color="#ef4444"
+                  footerLabel={p1?.result ? (p1.result.includes('successful') ? 'BYPASS SUCCESSFUL' : p1.result.toUpperCase()) : null}
+                  footerOk={false}
+                />
+                <BypassColumn
+                  title="GEO-DISTRIBUTED MODE"
+                  subtitle="G-Counter CRDT · global quota enforced"
+                  regions={p2?.regions}
+                  totalAccepted={p2?.total_accepted}
+                  totalRejected={p2?.total_rejected}
+                  color="#10b981"
+                  footerReason={p2?.rejected_reason}
+                  footerLabel={p2?.result ? (p2.result.includes('prevented') ? 'BYPASS PREVENTED' : p2.result.toUpperCase()) : null}
+                  footerOk={p2?.result?.includes('prevented')}
+                />
+              </div>
+            </div>
+          )}
         </Panel>
       );
     }
@@ -1797,6 +1929,7 @@
       const [policiesOpen,  setPoliciesOpen]  = useState(false);
       const [modelMetrics,  setModelMetrics]  = useState(null);
       const [latencyData,   setLatencyData]   = useState(null);
+      const [demoResults,   setDemoResults]   = useState(null);
       const [lastActiveTs,  setLastActiveTs]  = useState(0);
 
       const openModal  = useCallback((chart) => setModal(chart), []);
@@ -1822,13 +1955,18 @@
         try { setLatencyData(await fetchLatency()); } catch {}
       }, []);
 
+      const loadDemo = useCallback(async () => {
+        try { setDemoResults(await fetchDemoResults()); } catch {}
+      }, []);
+
       useEffect(() => {
         load();        const i1 = setInterval(load,        REFRESH_MS);
         loadCtrl();    const i2 = setInterval(loadCtrl,    REFRESH_MS);
         loadModel();   const i3 = setInterval(loadModel,   REFRESH_MS);
         loadLatency(); const i4 = setInterval(loadLatency, REFRESH_MS);
-        return () => { clearInterval(i1); clearInterval(i2); clearInterval(i3); clearInterval(i4); };
-      }, [load, loadCtrl, loadModel, loadLatency]);
+        loadDemo();    const i5 = setInterval(loadDemo,    REFRESH_MS);
+        return () => { clearInterval(i1); clearInterval(i2); clearInterval(i3); clearInterval(i4); clearInterval(i5); };
+      }, [load, loadCtrl, loadModel, loadLatency, loadDemo]);
 
       const addLog = useCallback((msg, type='info') => {
         setLogs(p => [...p.slice(-49), { id:Date.now()+Math.random(), ts:Date.now(), msg, type }]);
@@ -1898,6 +2036,8 @@
                 <DecisionsFeed decisions={decisions} loading={loading}/>
                 <OverridesTable overrides={overrides} loading={loading}/>
               </div>
+
+              <BypassPanel data={demoResults} loading={loading}/>
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <CounterChart counters={counters} loading={loading} onExpand={openModal}/>

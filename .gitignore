@@ -18,6 +18,8 @@ simulator/population.pkl
 
 # Agent runtime artifacts
 agent/decisions.jsonl
+agent/demo_results.json
+agent/demo_global_quota.log
 
 # Env / secrets
 .env
