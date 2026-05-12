@@ -48,6 +48,8 @@ class Decider:
         self._policy_ts: dict[tuple[str, str], float] = {}
         # last wall-clock time an override was emitted for user_id
         self._override_ts: dict[str, float] = {}
+        # Track the last time a noisy neighbor attacked a specific tier
+        self._last_noisy_ts: dict[tuple[str, str], float] = {}
 
     def decide(
         self,
@@ -77,13 +79,28 @@ class Decider:
                 # is concentration, not a tier-wide spike — Rule 3 (per-user
                 # override) is the right tool, not Rule 1 (tier-wide policy).
                 # Computed here so it can gate Rule 1 before hysteresis check.
+                sorted_users = sorted(
+                    obs.regions[region][tier].top_users, 
+                    key=lambda x: x.share_of_tier, 
+                    reverse=True
+                )
+                
+                # Calculate the combined share of the top 2 users (handles cases with 0, 1, or 2+ users)
+                top_2_share = sum(u.share_of_tier for u in sorted_users[:2])
+                
+                # Gate Rule 1: It is a noisy neighbor attack if traffic is high and highly concentrated
                 has_noisy_neighbor = (
                     observed_rpm >= 30
-                    and any(
-                        u.share_of_tier > 0.30
-                        for u in obs.regions[region][tier].top_users
-                    )
+                    and top_2_share > 0.70
                 )
+                # ── The 5-Minute Predictor Cooldown ──
+                # If we see an attack, log the timestamp.
+                if has_noisy_neighbor:
+                    self._last_noisy_ts[key] = now
+                
+                # Check if an attack happened in the last 300 seconds (5 minutes)
+                last_noisy = self._last_noisy_ts.get(key, 0.0)
+                recent_noisy_neighbor = (now - last_noisy) < 300.0
 
                 # ── Rule 3 — noisy neighbor (per-user, own hysteresis) ───────
                 # Runs BEFORE Rule 4's tier-policy hysteresis gate. Per-user
@@ -126,6 +143,19 @@ class Decider:
                             reason=f"noisy_neighbor_{user.user_id}",
                         ))
                         self._override_ts[user.user_id] = now
+                        # ── The Safety Net (Instant Undo) ──
+                # If the agent mistakenly lowered the tier limit on Tick N, 
+                # but catches the abuser on Tick N+1, instantly restore the capacity.
+                if has_noisy_neighbor:
+                    baseline_rpm = DEMO_BASELINE[tier]
+                    if cur_limit_rpm < baseline_rpm:
+                        decisions.append(Decision(
+                            type="policy", region=region, tier=tier, user_id=None,
+                            limit_per_minute=baseline_rpm,
+                            ttl=self._POLICY_TTL,
+                            reason=f"undo_false_spike_due_to_noisy_neighbor",
+                        ))
+                        self._policy_ts[key] = now
 
                 # Rule 4 — hysteresis gate (Rules 1 & 2 only; Rule 3 ran above)
                 last_pol = self._policy_ts.get(key)
@@ -133,12 +163,9 @@ class Decider:
                     continue
 
                 # ── Rule 1 — predicted spike mitigation (free tier only) ────
-                # Skipped when a noisy neighbor is present: firing a tier-wide
-                # policy would set _policy_ts and block Rule 3 for 60s, and the
-                # reduced cur_limit_rpm would cause the override throttle value
-                # to shrink each cycle (30 → 21 → 14 → …).
-                # With no noisy neighbor this fires normally for product_launch.
-                if tier == "free" and not has_noisy_neighbor:
+                # Skipped when a noisy neighbor is present OR was recently present,
+                # preventing the "throttle bounce" while the predictor cools down.
+                if tier == "free" and not recent_noisy_neighbor:
                     premium_key = (region, "premium")
                     premium_rej = obs.regions[region]["premium"].rejection_rate
                     spike = (forecast_rpm > 0.8 * cur_limit_rpm) or is_anomaly

@@ -55,5 +55,5 @@ def load_config() -> Config:
         metrics_port=int(os.getenv("METRICS_PORT", "9114")),
         log_path=os.getenv("LOG_PATH", "agent/decisions.jsonl"),
         predictor=os.getenv("PREDICTOR", "ewma"),
-        interval_seconds=int(os.getenv("INTERVAL_SECONDS", "15")),
+        interval_seconds=int(os.getenv("INTERVAL_SECONDS", "1")),
     )
