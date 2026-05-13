@@ -133,7 +133,7 @@ services:
       - .:/repo
       - ./agent:/app/agent
     command: ["sh", "-c", "rm -f /repo/agent/decisions.jsonl && python -m agent.api"]
-    depends_on: [redis-us, redis-eu, redis-asia, prometheus, gateway-us, gateway-eu, gateway-asia]
+    depends_on: [redis-us, redis-eu, redis-asia, prometheus]
     restart: on-failure
 
   dashboard:
