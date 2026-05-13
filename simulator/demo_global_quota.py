@@ -67,8 +67,21 @@ DEMO_BURST         = 500
 ORIGINAL_LIMIT_PER_MIN = 300
 ORIGINAL_BURST         = 60
 
-# Cleanup state ─ populated by _save_and_set_demo_policy.
-_original_policies: dict[str, dict | None] = {}
+# Phase 3 — agent-assisted premium user.
+# Agent detects spike demand and raises the per-region limit from 100 → 150,
+# so the premium user gets ~450 accepted instead of ~300. G-Counter still
+# enforces the (raised) global cap — bypass to 750 remains impossible.
+PREMIUM_DEMO_USER          = "demo_premium_userA"
+PREMIUM_TIER               = "premium"
+PREMIUM_DEMO_LIMIT         = 100   # artificially low so the improvement is visible
+AGENT_RAISED_LIMIT_PER_MIN = 150   # agent raises to this → global 450
+PREMIUM_DEMO_BURST         = 500   # high burst; all local checks pass, rejections are global only
+ORIGINAL_PREMIUM_LIMIT     = 3_000
+ORIGINAL_PREMIUM_BURST     = 600
+
+# Cleanup state ─ populated by _save_and_set_demo_policy / _save_and_set_premium_demo_policy.
+_original_policies:         dict[str, dict | None] = {}
+_original_premium_policies: dict[str, dict | None] = {}
 
 # Shared mutable state that gets serialised to RESULTS_PATH for the dashboard.
 _state: dict = {}
@@ -152,6 +165,75 @@ def _restore_policies() -> None:
             print(f"[warn] could not restore policy for {region}: {exc}", file=sys.stderr)
 
 
+def _save_and_set_premium_demo_policy() -> str:
+    """Cache existing premium-tier policies and write the initial Phase 3 demo policy."""
+    demo_policy_id = f"pol_{int(time.time())}_97"
+    for region in ("us", "eu", "asia"):
+        try:
+            r = _redis_client(region)
+            key = f"policy:{region}:{PREMIUM_TIER}"
+            existing = r.get(key)
+            _original_premium_policies[region] = json.loads(existing) if existing else None
+            demo_policy = {
+                "policy_id":        demo_policy_id,
+                "region":           region,
+                "tier":             PREMIUM_TIER,
+                "limit_per_minute": PREMIUM_DEMO_LIMIT,
+                "burst":            PREMIUM_DEMO_BURST,
+                "algorithm":        "token_bucket",
+                "ttl_seconds":      300,
+                "reason":           "demo_agent_phase3_initial",
+                "created_at":       datetime.now(timezone.utc).isoformat(),
+            }
+            r.set(key, json.dumps(demo_policy), ex=300)
+        except Exception as exc:
+            print(f"[warn] could not set premium demo policy for {region}: {exc}", file=sys.stderr)
+    return demo_policy_id
+
+
+def _restore_premium_policies() -> None:
+    """Restore captured premium-tier policies, falling back to the demo baseline."""
+    for region in ("us", "eu", "asia"):
+        try:
+            r = _redis_client(region)
+            key = f"policy:{region}:{PREMIUM_TIER}"
+            original = _original_premium_policies.get(region)
+            if original:
+                r.set(key, json.dumps(original), ex=original.get("ttl_seconds", 86400))
+            else:
+                fallback = {
+                    "policy_id":        f"pol_{int(time.time())}_2",
+                    "region":           region,
+                    "tier":             PREMIUM_TIER,
+                    "limit_per_minute": ORIGINAL_PREMIUM_LIMIT,
+                    "burst":            ORIGINAL_PREMIUM_BURST,
+                    "algorithm":        "token_bucket",
+                    "ttl_seconds":      86400,
+                    "reason":           "seed — demo baseline (restored after agent phase3 demo)",
+                    "created_at":       datetime.now(timezone.utc).isoformat(),
+                }
+                r.set(key, json.dumps(fallback), ex=86400)
+        except Exception as exc:
+            print(f"[warn] could not restore premium policy for {region}: {exc}", file=sys.stderr)
+
+
+def _flush_premium_demo_keys() -> None:
+    """Delete leftover Phase 3 counters so each run starts clean."""
+    patterns = (
+        f"rl:global:{PREMIUM_TIER}:{PREMIUM_DEMO_USER}",
+        f"rl:local:*:{PREMIUM_TIER}:{PREMIUM_DEMO_USER}",
+    )
+    for region in REDIS_CONFIGS:
+        try:
+            r = _redis_client(region)
+            for pat in patterns:
+                keys = list(r.scan_iter(match=pat, count=200))
+                if keys:
+                    r.delete(*keys)
+        except Exception as exc:
+            print(f"[warn] could not flush premium demo keys in {region}: {exc}", file=sys.stderr)
+
+
 # ── Results file ────────────────────────────────────────────────────────────
 
 def _write_results() -> None:
@@ -172,7 +254,7 @@ def _set_phase(phase: str) -> None:
 
 # ── HTTP helpers ────────────────────────────────────────────────────────────
 
-async def _wait_for_policy(demo_policy_id: str, timeout_s: int = 15) -> bool:
+async def _wait_for_policy(demo_policy_id: str, tier: str = TIER, timeout_s: int = 15) -> bool:
     """Probe each gateway until they all return the demo policy_id.
 
     Each gateway's policy store polls Redis every 5s — the wait absorbs that
@@ -188,7 +270,7 @@ async def _wait_for_policy(demo_policy_id: str, timeout_s: int = 15) -> bool:
                         f"{GATEWAY_URLS[region]}/check",
                         json={
                             "user_id":  "demo_probe",
-                            "tier":     TIER,
+                            "tier":     tier,
                             "region":   region,
                             "endpoint": "/api/v1/data",
                         },
@@ -202,11 +284,11 @@ async def _wait_for_policy(demo_policy_id: str, timeout_s: int = 15) -> bool:
     return not pending
 
 
-async def _send_one(client: httpx.AsyncClient, region: str, user_id: str) -> bool:
+async def _send_one(client: httpx.AsyncClient, region: str, user_id: str, tier: str = TIER) -> bool:
     try:
         resp = await client.post(
             f"{GATEWAY_URLS[region]}/check",
-            json={"user_id": user_id, "tier": TIER, "region": region, "endpoint": "/api/v1/data"},
+            json={"user_id": user_id, "tier": tier, "region": region, "endpoint": "/api/v1/data"},
             timeout=5.0,
         )
         return bool(resp.json().get("allowed"))
@@ -214,9 +296,9 @@ async def _send_one(client: httpx.AsyncClient, region: str, user_id: str) -> boo
         return False
 
 
-async def _burst(region: str, user_id: str, count: int) -> dict:
+async def _burst(region: str, user_id: str, count: int, tier: str = TIER) -> dict:
     async with httpx.AsyncClient() as client:
-        results = await asyncio.gather(*[_send_one(client, region, user_id) for _ in range(count)])
+        results = await asyncio.gather(*[_send_one(client, region, user_id, tier) for _ in range(count)])
     accepted = sum(1 for ok in results if ok)
     return {"accepted": accepted, "rejected": len(results) - accepted}
 
@@ -309,6 +391,86 @@ async def phase_geo_distributed(attempts: int) -> None:
     _write_results()
 
 
+async def phase_agent_assisted(attempts: int) -> None:
+    """Phase 3: premium user, agent raises limit 100 → 150/region (global 300 → 450).
+
+    Shows that the AI agent improves throughput for legitimate premium traffic
+    while the G-Counter still enforces the raised global cap — bypass to 750
+    remains impossible regardless of what the agent does.
+    """
+    print("\n" + "=" * 60)
+    print("AGENT-ASSISTED MODE (PREMIUM TIER)")
+    print(f"(Agent raises limit {PREMIUM_DEMO_LIMIT} → {AGENT_RAISED_LIMIT_PER_MIN}/region · global {PREMIUM_DEMO_LIMIT * 3} → {AGENT_RAISED_LIMIT_PER_MIN * 3})")
+    print("=" * 60)
+
+    _flush_premium_demo_keys()
+
+    # Set initial low demo policy so the improvement is measurable.
+    initial_policy_id = _save_and_set_premium_demo_policy()
+    print(f"\nInitial premium policy: limit={PREMIUM_DEMO_LIMIT}/region → global {PREMIUM_DEMO_LIMIT * 3}")
+    print("Waiting for policy propagation...")
+    if not await _wait_for_policy(initial_policy_id, tier=PREMIUM_TIER, timeout_s=15):
+        print("[warn] initial premium policy did not propagate within 15s — continuing")
+
+    # Simulate agent decision: spike detected, raise the limit.
+    agent_policy_id = f"pol_{int(time.time())}_96"
+    print(f"Agent decision: predicted spike → raising limit {PREMIUM_DEMO_LIMIT} → {AGENT_RAISED_LIMIT_PER_MIN}/region")
+    for region in ("us", "eu", "asia"):
+        try:
+            r = _redis_client(region)
+            key = f"policy:{region}:{PREMIUM_TIER}"
+            agent_policy = {
+                "policy_id":        agent_policy_id,
+                "region":           region,
+                "tier":             PREMIUM_TIER,
+                "limit_per_minute": AGENT_RAISED_LIMIT_PER_MIN,
+                "burst":            PREMIUM_DEMO_BURST,
+                "algorithm":        "token_bucket",
+                "ttl_seconds":      300,
+                "reason":           "agent_predicted_spike_premium",
+                "created_at":       datetime.now(timezone.utc).isoformat(),
+            }
+            r.set(key, json.dumps(agent_policy), ex=300)
+        except Exception as exc:
+            print(f"[warn] could not write agent policy for {region}: {exc}", file=sys.stderr)
+
+    print("Waiting for agent policy propagation...")
+    if not await _wait_for_policy(agent_policy_id, tier=PREMIUM_TIER, timeout_s=15):
+        print("[warn] agent policy did not propagate within 15s — continuing")
+
+    results = await asyncio.gather(*[
+        _burst(region, PREMIUM_DEMO_USER, attempts, PREMIUM_TIER)
+        for region in ("us", "eu", "asia")
+    ])
+    per_region = dict(zip(("us", "eu", "asia"), results))
+
+    total_accepted = sum(r["accepted"] for r in per_region.values())
+    total_rejected = sum(r["rejected"] for r in per_region.values())
+    agent_global   = AGENT_RAISED_LIMIT_PER_MIN * 3
+
+    for region, result in per_region.items():
+        print(f"{region.upper():<4}  accepted: {result['accepted']:>3},  rejected: {result['rejected']}")
+
+    no_agent_baseline = PREMIUM_DEMO_LIMIT * 3
+    if total_accepted > int(no_agent_baseline * 1.1):
+        result_msg = f"agent raised throughput: ~{no_agent_baseline} → {total_accepted}"
+    else:
+        result_msg = f"agent-assisted: {total_accepted} accepted (global cap: {agent_global})"
+
+    print()
+    print(f"Total accepted:  {total_accepted}  (vs ~{no_agent_baseline} without agent)")
+    print(f"Total rejected:  {total_rejected}")
+    print(f"Result: {result_msg}")
+
+    _state["phase3"]["regions"]                       = per_region
+    _state["phase3"]["total_accepted"]                = total_accepted
+    _state["phase3"]["total_rejected"]                = total_rejected
+    _state["phase3"]["result"]                        = result_msg
+    _state["phase3"]["agent_decision"]["raised_limit"] = AGENT_RAISED_LIMIT_PER_MIN
+    _state["phase3"]["agent_decision"]["global_raised"] = agent_global
+    _write_results()
+
+
 # ── Entry point ─────────────────────────────────────────────────────────────
 
 async def main(attempts: int, global_limit: int) -> None:
@@ -335,6 +497,20 @@ async def main(attempts: int, global_limit: int) -> None:
             "total_rejected":  0,
             "rejected_reason": None,
             "result":          None,
+        },
+        "phase3": {
+            "label":          "AGENT-ASSISTED MODE",
+            "agent_decision": {
+                "reason":          "agent_predicted_spike_premium",
+                "original_limit":  PREMIUM_DEMO_LIMIT,
+                "global_original": PREMIUM_DEMO_LIMIT * 3,
+                "raised_limit":    None,
+                "global_raised":   None,
+            },
+            "regions":        {"us": None, "eu": None, "asia": None},
+            "total_accepted": 0,
+            "total_rejected": 0,
+            "result":         None,
         },
         "started_at":   datetime.now(timezone.utc).isoformat(),
         "completed_at": None,
@@ -385,9 +561,17 @@ async def main(attempts: int, global_limit: int) -> None:
     _set_phase("phase2")
     await phase_geo_distributed(attempts)
 
+    _set_phase("between_p3")
+    print("\nWaiting 5 seconds before agent-assisted phase...")
+    await asyncio.sleep(5)
+
+    _set_phase("phase3")
+    await phase_agent_assisted(attempts)
+
     _set_phase("cleanup")
     print("\nRestoring original policies...")
     _restore_policies()
+    _restore_premium_policies()
 
     _state["status"]        = "complete"
     _state["current_phase"] = "done"
@@ -406,6 +590,7 @@ def _handle_signal(sig, _frame):
     _state["completed_at"]  = datetime.now(timezone.utc).isoformat()
     _write_results()
     _restore_policies()
+    _restore_premium_policies()
     sys.exit(0)
 
 
@@ -427,4 +612,5 @@ if __name__ == "__main__":
         _write_results()
         print(f"\n[demo] ERROR: {exc}", file=sys.stderr)
         _restore_policies()
+        _restore_premium_policies()
         raise
