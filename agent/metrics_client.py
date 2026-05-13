@@ -48,8 +48,8 @@ def _empty_regions() -> dict[str, dict[str, TierFeatures]]:
 class MetricsClient:
     """Thin async wrapper around the Prometheus HTTP query API."""
 
-    _Q_RPS = 'sum by (region, tier) (rate(rl_requests_total[1m]))'
-    _Q_DENY = 'sum by (region, tier) (rate(rl_requests_total{decision="denied"}[1m]))'
+    _Q_RPS = 'sum by (region, tier) (rate(rl_requests_total[15s]))'
+    _Q_DENY = 'sum by (region, tier) (rate(rl_requests_total{decision="denied"}[15s]))'
     _Q_USERS = 'sum by (region, tier, user_id) (rl_counter_value)'
 
     def __init__(self, prom_url: str, timeout: float = 5.0) -> None:
