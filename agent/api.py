@@ -426,6 +426,17 @@ def api_demo_results():
     return jsonify({"status": "idle", "current_phase": None})
 
 
+@app.route("/api/demo/clear", methods=["POST"])
+def api_demo_clear():
+    """Delete the demo results file so the panel returns to idle state."""
+    try:
+        if DEMO_RESULTS_PATH.exists():
+            DEMO_RESULTS_PATH.unlink()
+        return jsonify({"cleared": True})
+    except Exception as exc:
+        return jsonify({"cleared": False, "error": str(exc)}), 500
+
+
 # ── Control helpers ───────────────────────────────────────────────────────────
 
 def _is_running(key: str) -> bool:

@@ -164,7 +164,6 @@
       { id:'noisy_neighbor',     label:'Noisy Neighbor',     color:'#f39c12', desc:'2 abusers → tier congestion → latency spike for all users' },
       { id:'product_launch',     label:'Product Launch',     color:'#3498db', desc:'10× spike on US after 30s' },
       { id:'global_steady',      label:'Global Steady',      color:'#2ecc71', desc:'Multi-region with diurnal' },
-      { id:'region_failover',    label:'Region Failover',    color:'#e74c3c', desc:'Simulate gateway-us crash' },
       { id:'global_quota_bypass',label:'Global Quota Bypass',color:'#9b59b6', desc:'Local-only vs geo-distributed quota enforcement' },
     ];
 
@@ -782,9 +781,27 @@
       const globalLimit = cfg?.global_limit ?? 300;
       const attempts    = cfg?.attempts_per_region ?? 250;
 
+      async function clearDemoResults() {
+        await fetch(`${API}/api/demo/clear`, { method: 'POST' });
+      }
+
       return (
         <Panel>
-          <PanelHeader title="Global Quota Bypass Demo" badge={badge}/>
+          <PanelHeader title="Global Quota Bypass Demo" badge={
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {badge}
+              {!isIdle && (
+                <button
+                  onClick={clearDemoResults}
+                  style={{ fontSize:9, padding:'2px 7px', borderRadius:4, border:'1px solid #333', background:'#1a1a1a', color:'#666', cursor:'pointer', letterSpacing:'0.04em', lineHeight:'14px' }}
+                  onMouseEnter={e => { e.target.style.borderColor='#555'; e.target.style.color='#aaa'; }}
+                  onMouseLeave={e => { e.target.style.borderColor='#333'; e.target.style.color='#666'; }}
+                >
+                  CLEAR
+                </button>
+              )}
+            </div>
+          }/>
           {isIdle ? (
             <div style={{ padding:'32px 20px', textAlign:'center', color:'#3a3a3a', fontSize:13 }}>
               Start the <span style={{ color:'#9b59b6' }}>Global Quota Bypass</span> scenario from the sidebar
