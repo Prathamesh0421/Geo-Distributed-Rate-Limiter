@@ -154,3 +154,262 @@
 2026-05-11 20:11:30,748 INFO scenario region_failover: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
 2026-05-11 20:11:30,749 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario region_failover
 2026-05-11 20:11:30,750 INFO simulator started pid=7205 scenario=region_failover
+2026-05-12 20:15:38,532 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-12 20:15:38,669 INFO seed_policies: 9 policies written
+2026-05-12 20:15:43,031 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-12 20:15:43,033 INFO agent started pid=131 predictor=ewma interval=15
+2026-05-12 20:32:00,765 INFO scenario global_quota_bypass: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-12 20:32:00,767 INFO START simulator: /usr/local/bin/python /repo/simulator/demo_global_quota.py
+2026-05-12 20:32:00,769 INFO simulator started pid=4992 scenario=global_quota_bypass started_ms=1778617920768
+2026-05-12 20:32:46,150 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 1, 'asia': 0}
+2026-05-12 20:32:46,151 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-12 20:32:46,152 INFO simulator started pid=5411 scenario=noisy_neighbor started_ms=1778617966152
+2026-05-12 20:35:13,179 INFO scenario product_launch: scrubbed overrides {'us': 1, 'eu': 0, 'asia': 0}
+2026-05-12 20:35:13,180 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-12 20:35:13,181 INFO simulator started pid=6738 scenario=product_launch started_ms=1778618113181
+2026-05-13 01:38:45,335 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 01:38:45,485 INFO seed_policies: 9 policies written
+2026-05-13 01:38:46,795 INFO scenario global_quota_bypass: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 01:38:46,799 INFO START simulator: /usr/local/bin/python /repo/simulator/demo_global_quota.py
+2026-05-13 01:38:46,800 INFO simulator started pid=2685 scenario=global_quota_bypass started_ms=1778636326800
+2026-05-13 02:10:07,151 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:10:07,152 INFO agent started pid=82 predictor=ewma interval=15
+2026-05-13 02:10:16,407 INFO agent stopped pid=82
+2026-05-13 02:10:16,407 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 02:10:17,805 INFO FLUSH all Redis instances
+2026-05-13 02:10:17,824 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:10:18,798 INFO FLUSH all Redis instances
+2026-05-13 02:10:18,816 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:10:23,738 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:10:23,870 INFO seed_policies: 9 policies written
+2026-05-13 02:10:25,428 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:10:25,430 INFO agent started pid=278 predictor=ewma interval=15
+2026-05-13 02:12:20,774 INFO scenario global_quota_bypass: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:12:20,778 INFO START simulator: /usr/local/bin/python /repo/simulator/demo_global_quota.py
+2026-05-13 02:12:20,779 INFO simulator started pid=1328 scenario=global_quota_bypass started_ms=1778638340779
+2026-05-13 02:19:44,339 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:19:44,491 INFO seed_policies: 9 policies written
+2026-05-13 02:19:45,509 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:19:45,510 INFO agent started pid=140 predictor=ewma interval=15
+2026-05-13 02:21:44,348 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:21:44,349 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 02:21:44,350 INFO simulator started pid=1222 scenario=noisy_neighbor started_ms=1778638904350
+2026-05-13 02:24:10,304 INFO scenario product_launch: scrubbed overrides {'us': 2, 'eu': 0, 'asia': 0}
+2026-05-13 02:24:10,304 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-13 02:24:10,305 INFO simulator started pid=2565 scenario=product_launch started_ms=1778639050305
+2026-05-13 02:29:05,392 INFO scenario global_quota_bypass: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:29:05,396 INFO START simulator: /usr/local/bin/python /repo/simulator/demo_global_quota.py
+2026-05-13 02:29:05,397 INFO simulator started pid=5221 scenario=global_quota_bypass started_ms=1778639345397
+2026-05-13 02:29:54,375 INFO FLUSH all Redis instances
+2026-05-13 02:29:54,390 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:29:56,115 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:29:56,261 INFO seed_policies: 9 policies written
+2026-05-13 02:29:56,262 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 02:30:04,109 INFO scenario global_quota_bypass: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:30:04,112 INFO START simulator: /usr/local/bin/python /repo/simulator/demo_global_quota.py
+2026-05-13 02:30:04,113 INFO simulator started pid=5766 scenario=global_quota_bypass started_ms=1778639404113
+2026-05-13 02:31:04,494 INFO FLUSH all Redis instances
+2026-05-13 02:31:04,505 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:31:05,286 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:31:05,439 INFO seed_policies: 9 policies written
+2026-05-13 02:31:15,407 INFO scenario global_steady: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:31:15,408 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario global_steady
+2026-05-13 02:31:15,409 INFO simulator started pid=6442 scenario=global_steady started_ms=1778639475409
+2026-05-13 02:32:01,754 INFO simulator stopped pid=6442
+2026-05-13 02:32:01,761 INFO simulator stop: scrubbed overrides {'us': 2, 'eu': 1, 'asia': 1}
+2026-05-13 02:32:05,942 INFO FLUSH all Redis instances
+2026-05-13 02:32:05,961 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:32:07,427 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:32:07,599 INFO seed_policies: 9 policies written
+2026-05-13 02:32:20,822 INFO FLUSH all Redis instances
+2026-05-13 02:32:20,842 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:32:22,318 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:32:22,469 INFO seed_policies: 9 policies written
+2026-05-13 02:39:56,348 INFO RESTART gateways
+2026-05-13 02:39:57,625 INFO gateways restarted
+2026-05-13 02:39:58,680 INFO FLUSH all Redis instances
+2026-05-13 02:39:58,700 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:39:59,708 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:39:59,865 INFO seed_policies: 9 policies written
+2026-05-13 02:40:02,608 INFO scenario product_launch: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:40:02,608 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-13 02:40:02,609 INFO simulator started pid=11180 scenario=product_launch started_ms=1778640002609
+2026-05-13 02:40:28,236 INFO simulator stopped pid=11180
+2026-05-13 02:40:28,269 INFO simulator stop: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:40:33,217 INFO agent stopped pid=140
+2026-05-13 02:40:35,998 INFO RESTART gateways
+2026-05-13 02:40:37,070 INFO gateways restarted
+2026-05-13 02:40:38,039 INFO FLUSH all Redis instances
+2026-05-13 02:40:38,056 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:40:39,885 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:40:40,057 INFO seed_policies: 9 policies written
+2026-05-13 02:40:42,993 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:40:42,995 INFO agent started pid=11574 predictor=ewma interval=15
+2026-05-13 02:42:44,464 INFO scenario product_launch: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 02:42:44,466 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-13 02:42:44,467 INFO simulator started pid=12688 scenario=product_launch started_ms=1778640164467
+2026-05-13 02:46:29,813 INFO FLUSH all Redis instances
+2026-05-13 02:46:29,832 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:46:30,427 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:46:30,597 INFO seed_policies: 9 policies written
+2026-05-13 02:46:30,598 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 02:46:31,356 INFO RESTART gateways
+2026-05-13 02:46:32,452 INFO gateways restarted
+2026-05-13 02:46:44,512 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:46:44,673 INFO seed_policies: 9 policies written
+2026-05-13 02:46:46,129 INFO RESTART gateways
+2026-05-13 02:46:47,175 INFO gateways restarted
+2026-05-13 02:46:59,800 INFO agent stopped pid=11574
+2026-05-13 02:47:02,805 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:47:02,808 INFO agent started pid=15053 predictor=ewma interval=15
+2026-05-13 02:47:12,171 INFO RESTART gateways
+2026-05-13 02:47:13,317 INFO gateways restarted
+2026-05-13 02:47:14,475 INFO agent stopped pid=15053
+2026-05-13 02:47:14,476 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 02:47:16,410 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 02:47:16,413 INFO agent started pid=15219 predictor=ewma interval=15
+2026-05-13 02:47:19,697 INFO RESTART gateways
+2026-05-13 02:47:20,692 INFO gateways restarted
+2026-05-13 02:47:22,459 INFO FLUSH all Redis instances
+2026-05-13 02:47:22,469 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:49:57,444 INFO RESTART gateways
+2026-05-13 02:49:58,644 INFO gateways restarted
+2026-05-13 02:49:59,490 INFO FLUSH all Redis instances
+2026-05-13 02:49:59,505 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 02:50:01,070 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 02:50:01,305 INFO seed_policies: 9 policies written
+2026-05-13 02:50:01,306 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 03:16:45,714 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:16:45,716 INFO agent started pid=42 predictor=ewma interval=15
+2026-05-13 03:16:55,353 INFO agent stopped pid=42
+2026-05-13 03:16:55,354 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 03:16:56,364 INFO FLUSH all Redis instances
+2026-05-13 03:16:56,387 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 03:16:57,073 INFO RESTART gateways
+2026-05-13 03:16:58,071 INFO gateways restarted
+2026-05-13 03:17:02,011 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 03:17:02,163 INFO seed_policies: 9 policies written
+2026-05-13 03:17:03,510 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:17:03,511 INFO agent started pid=245 predictor=ewma interval=15
+2026-05-13 03:19:36,821 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:19:36,822 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 03:19:36,824 INFO simulator started pid=1639 scenario=noisy_neighbor started_ms=1778642376824
+2026-05-13 03:27:27,180 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:27:27,180 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 03:27:27,181 INFO simulator started pid=5883 scenario=noisy_neighbor started_ms=1778642847181
+2026-05-13 03:30:46,487 INFO FLUSH all Redis instances
+2026-05-13 03:30:46,507 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 03:30:47,970 INFO RESTART gateways
+2026-05-13 03:30:49,005 INFO agent stopped pid=245
+2026-05-13 03:30:49,005 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 03:30:49,361 INFO gateways restarted
+2026-05-13 03:36:08,184 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 03:36:08,383 INFO seed_policies: 9 policies written
+2026-05-13 03:36:10,772 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:36:10,774 INFO agent started pid=181 predictor=ewma interval=15
+2026-05-13 03:38:22,711 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:38:22,712 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 03:38:22,713 INFO simulator started pid=1367 scenario=noisy_neighbor started_ms=1778643502713
+2026-05-13 03:42:22,933 INFO RESTART gateways
+2026-05-13 03:42:24,097 INFO gateways restarted
+2026-05-13 03:42:25,334 INFO FLUSH all Redis instances
+2026-05-13 03:42:25,350 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 03:42:27,008 INFO agent stopped pid=181
+2026-05-13 03:42:27,009 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 03:49:17,596 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:49:17,599 INFO agent started pid=7158 predictor=ewma interval=15
+2026-05-13 03:49:27,234 INFO agent stopped pid=7158
+2026-05-13 03:49:27,239 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 03:49:28,948 INFO RESTART gateways
+2026-05-13 03:49:30,071 INFO gateways restarted
+2026-05-13 03:49:30,208 INFO FLUSH all Redis instances
+2026-05-13 03:49:30,245 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 03:49:34,554 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 03:49:34,676 INFO seed_policies: 9 policies written
+2026-05-13 03:49:35,887 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:49:35,888 INFO agent started pid=7361 predictor=ewma interval=15
+2026-05-13 03:51:43,055 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:51:43,056 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 03:51:43,057 INFO simulator started pid=8498 scenario=noisy_neighbor started_ms=1778644303057
+2026-05-13 03:52:07,247 INFO simulator stopped pid=8498
+2026-05-13 03:52:07,254 INFO simulator stop: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:54:40,648 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:54:40,652 INFO agent started pid=130 predictor=ewma interval=15
+2026-05-13 03:54:48,092 INFO RESTART gateways
+2026-05-13 03:54:49,060 INFO agent stopped pid=130
+2026-05-13 03:54:49,061 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 03:54:49,259 INFO gateways restarted
+2026-05-13 03:54:49,295 INFO FLUSH all Redis instances
+2026-05-13 03:54:49,321 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 03:54:51,031 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 03:54:51,220 INFO seed_policies: 9 policies written
+2026-05-13 03:54:53,122 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 03:54:53,124 INFO agent started pid=284 predictor=ewma interval=15
+2026-05-13 03:57:25,267 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 03:57:25,268 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 03:57:25,269 INFO simulator started pid=1654 scenario=noisy_neighbor started_ms=1778644645269
+2026-05-13 04:01:02,544 INFO RESTART gateways
+2026-05-13 04:01:04,010 INFO gateways restarted
+2026-05-13 04:01:05,300 INFO FLUSH all Redis instances
+2026-05-13 04:01:05,313 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:01:13,292 INFO RESTART gateways
+2026-05-13 04:01:14,528 INFO gateways restarted
+2026-05-13 04:01:14,743 INFO FLUSH all Redis instances
+2026-05-13 04:01:14,762 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:01:16,968 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:01:17,152 INFO seed_policies: 9 policies written
+2026-05-13 04:01:17,154 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 04:01:21,202 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:01:21,370 INFO seed_policies: 9 policies written
+2026-05-13 04:01:22,974 INFO scenario product_launch: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 04:01:22,974 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-13 04:01:22,975 INFO simulator started pid=3787 scenario=product_launch started_ms=1778644882975
+2026-05-13 04:01:28,394 INFO simulator stopped pid=3787
+2026-05-13 04:01:28,399 INFO simulator stop: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 04:10:51,056 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:10:51,207 INFO seed_policies: 9 policies written
+2026-05-13 04:10:53,237 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 04:10:53,238 INFO agent started pid=133 predictor=ewma interval=15
+2026-05-13 04:13:49,871 INFO RESTART gateways
+2026-05-13 04:13:50,858 INFO gateways restarted
+2026-05-13 04:13:56,240 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 04:13:56,240 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 04:13:56,241 INFO simulator started pid=1783 scenario=noisy_neighbor started_ms=1778645636241
+2026-05-13 04:24:24,564 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 04:24:24,567 INFO agent started pid=106 predictor=ewma interval=15
+2026-05-13 04:24:29,151 INFO FLUSH all Redis instances
+2026-05-13 04:24:29,176 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:24:29,949 INFO RESTART gateways
+2026-05-13 04:24:31,023 INFO gateways restarted
+2026-05-13 04:24:32,584 INFO FLUSH all Redis instances
+2026-05-13 04:24:32,605 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:24:32,656 INFO agent stopped pid=106
+2026-05-13 04:24:32,657 INFO deleted decisions.jsonl — next start will warm up from scratch
+2026-05-13 04:24:33,413 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:24:33,571 INFO seed_policies: 9 policies written
+2026-05-13 04:24:34,628 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 04:24:34,629 INFO agent started pid=238 predictor=ewma interval=15
+2026-05-13 04:26:25,901 INFO scenario noisy_neighbor: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 04:26:25,902 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario noisy_neighbor
+2026-05-13 04:26:25,903 INFO simulator started pid=1032 scenario=noisy_neighbor started_ms=1778646385903
+2026-05-13 04:28:32,985 INFO RESTART gateways
+2026-05-13 04:28:34,076 INFO gateways restarted
+2026-05-13 04:28:35,464 INFO FLUSH all Redis instances
+2026-05-13 04:28:35,491 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:28:35,950 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:28:36,104 INFO seed_policies: 9 policies written
+2026-05-13 04:28:36,105 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 04:28:51,161 INFO agent stopped pid=238
+2026-05-13 04:28:55,484 INFO START agent: /usr/local/bin/python -m agent.main run --predictor ewma --interval 15
+2026-05-13 04:28:55,485 INFO agent started pid=2386 predictor=ewma interval=15
+2026-05-13 04:31:01,320 INFO scenario product_launch: scrubbed overrides {'us': 0, 'eu': 0, 'asia': 0}
+2026-05-13 04:31:01,320 INFO START simulator: /usr/local/bin/python /repo/simulator/main.py scenario product_launch
+2026-05-13 04:31:01,321 INFO simulator started pid=3524 scenario=product_launch started_ms=1778646661321
+2026-05-13 04:36:34,244 INFO FLUSH all Redis instances
+2026-05-13 04:36:34,278 INFO Redis flush complete: {'redis-us': 'ok', 'redis-eu': 'ok', 'redis-asia': 'ok'}
+2026-05-13 04:36:35,780 INFO RESTART gateways
+2026-05-13 04:36:36,793 INFO gateways restarted
+2026-05-13 04:36:40,798 INFO SEED policies: /usr/local/bin/python /repo/tools/seed_policies.py --demo
+2026-05-13 04:36:40,973 INFO seed_policies: 9 policies written
+2026-05-13 04:36:40,974 INFO seed_policies: cleared decisions.jsonl
+2026-05-13 04:36:53,600 INFO agent stopped pid=2386

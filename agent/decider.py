@@ -50,6 +50,10 @@ class Decider:
         self._override_ts: dict[str, float] = {}
         # Track the last time a noisy neighbor attacked a specific tier
         self._last_noisy_ts: dict[tuple[str, str], float] = {}
+        # Consecutive ticks where a spike was detected without a noisy-neighbor
+        # explanation. Rule 1 requires >= 2 ticks before firing, giving the
+        # rl_counter_value gauge time to populate user-level concentration data.
+        self._spike_watch: dict[tuple[str, str], int] = {}
 
     def decide(
         self,
@@ -73,6 +77,9 @@ class Decider:
                 forecast_rpm = fc.point * 60.0 if fc is not None else observed_rpm
                 rejection_rate = obs.regions[region][tier].rejection_rate
                 is_anomaly = anomalies.get(key, False)
+                premium_key = (region, "premium")
+                # Compute spike early so _spike_watch can be updated before Rule 1.
+                spike = (forecast_rpm > 0.8 * cur_limit_rpm) or is_anomaly
 
                 # Detect noisy-neighbor pattern for this tick.
                 # When any single user holds > 30% of tier traffic the pattern
@@ -101,6 +108,22 @@ class Decider:
                 # Check if an attack happened in the last 300 seconds (5 minutes)
                 last_noisy = self._last_noisy_ts.get(key, 0.0)
                 recent_noisy_neighbor = (now - last_noisy) < 300.0
+
+                # has_user_data is True once at least one user has crossed the
+                # rl_counter_value emission threshold (sum >= Limit/2 allowed
+                # requests). Until then the gauge is empty and we cannot tell
+                # whether the spike is concentrated or distributed.
+                has_user_data = len(obs.regions[region][tier].top_users) > 0
+
+                # Advance the deliberation counter when a spike is active but not
+                # yet attributed to a noisy neighbor. Reset on any other tick so the
+                # counter always reflects *consecutive* unattributed spike ticks.
+                # Used only as a fallback for genuinely distributed spikes where
+                # no individual user ever crosses the gauge threshold.
+                if spike and not recent_noisy_neighbor:
+                    self._spike_watch[key] = self._spike_watch.get(key, 0) + 1
+                else:
+                    self._spike_watch[key] = 0
 
                 # ── Rule 3 — noisy neighbor (per-user, own hysteresis) ───────
                 # Runs BEFORE Rule 4's tier-policy hysteresis gate. Per-user
@@ -143,9 +166,13 @@ class Decider:
                             reason=f"noisy_neighbor_{user.user_id}",
                         ))
                         self._override_ts[user.user_id] = now
-                        # ── The Safety Net (Instant Undo) ──
-                # If the agent mistakenly lowered the tier limit on Tick N, 
+
+                # ── The Safety Net (Instant Undo) ──
+                # If the agent mistakenly lowered the tier limit on Tick N,
                 # but catches the abuser on Tick N+1, instantly restore the capacity.
+                # Also reverts any premium compensation that was emitted alongside
+                # a false Rule 1 firing — without this, premium stays elevated even
+                # after the noisy neighbor has been identified and overridden.
                 if has_noisy_neighbor:
                     baseline_rpm = DEMO_BASELINE[tier]
                     if cur_limit_rpm < baseline_rpm:
@@ -156,6 +183,25 @@ class Decider:
                             reason=f"undo_false_spike_due_to_noisy_neighbor",
                         ))
                         self._policy_ts[key] = now
+                    # Revert premium compensation only from the free-tier iteration
+                    # to avoid emitting the same decision twice per region.
+                    if tier == "free":
+                        prem_cur = cur_policies.get(premium_key, {})
+                        prem_limit = int(prem_cur.get("limit_per_minute", STATIC_FALLBACK["premium"]))
+                        prem_baseline = DEMO_BASELINE["premium"]
+                        if prem_limit > prem_baseline:
+                            # No hysteresis check here — this is an emergency revert,
+                            # not a proactive policy change. The hysteresis on proactive
+                            # decisions is 60s but the noisy neighbor is confirmed just
+                            # one tick (15s) after the false premium boost, so gating
+                            # on hysteresis would suppress this revert entirely.
+                            decisions.append(Decision(
+                                type="policy", region=region, tier="premium", user_id=None,
+                                limit_per_minute=prem_baseline,
+                                ttl=self._POLICY_TTL,
+                                reason="undo_premium_compensation_due_to_noisy_neighbor",
+                            ))
+                            self._policy_ts[premium_key] = now
 
                 # Rule 4 — hysteresis gate (Rules 1 & 2 only; Rule 3 ran above)
                 last_pol = self._policy_ts.get(key)
@@ -165,11 +211,19 @@ class Decider:
                 # ── Rule 1 — predicted spike mitigation (free tier only) ────
                 # Skipped when a noisy neighbor is present OR was recently present,
                 # preventing the "throttle bounce" while the predictor cools down.
+                #
+                # Gate: require user-level gauge data before firing a tier-wide
+                # policy change. The rl_counter_value gauge only emits a series
+                # once a user has accumulated >= Limit/2 allowed requests — with a
+                # 15s interval that silence window spans ~30s. Firing during it
+                # causes the "false spike" the Safety Net has to undo.
+                # Fallback: after 4 consecutive spike ticks (60s) without any
+                # gauge data, accept that traffic is too distributed for individual
+                # users to reach the emission threshold and fire anyway.
                 if tier == "free" and not recent_noisy_neighbor:
-                    premium_key = (region, "premium")
                     premium_rej = obs.regions[region]["premium"].rejection_rate
-                    spike = (forecast_rpm > 0.8 * cur_limit_rpm) or is_anomaly
-                    if spike and premium_rej < 0.10:
+                    gauge_ready = has_user_data or self._spike_watch.get(key, 0) >= 3
+                    if spike and premium_rej < 0.10 and gauge_ready:
                         new_free_rpm = max(STATIC_FLOOR["free"], int(cur_limit_rpm * 0.70))
                         decisions.append(Decision(
                             type="policy", region=region, tier="free", user_id=None,
@@ -188,7 +242,7 @@ class Decider:
                                 type="policy", region=region, tier="premium", user_id=None,
                                 limit_per_minute=int(prem_limit * 1.10),
                                 ttl=self._POLICY_TTL,
-                                reason=f"predicted_spike_{region}_free_compensation",
+                                reason=f"predicted_spike_{region}_premium_compensation",
                             ))
                             self._policy_ts[premium_key] = now
 
