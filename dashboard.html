@@ -161,11 +161,11 @@
     const REFRESH_MS = 1000;
 
     const SCENARIOS = [
-      { id:'noisy_neighbor',     label:'Noisy Neighbor',     color:'#f59e0b', desc:'2 abusers → tier congestion → latency spike for all users' },
-      { id:'product_launch',     label:'Product Launch',     color:'#3b82f6', desc:'10× spike on US after 30s' },
-      { id:'global_steady',      label:'Global Steady',      color:'#10b981', desc:'Multi-region with diurnal' },
-      { id:'region_failover',    label:'Region Failover',    color:'#a855f7', desc:'Simulate gateway-us crash' },
-      { id:'global_quota_bypass',label:'Global Quota Bypass',color:'#ec4899', desc:'Local-only vs geo-distributed quota enforcement' },
+      { id:'noisy_neighbor',     label:'Noisy Neighbor',     color:'#f39c12', desc:'2 abusers → tier congestion → latency spike for all users' },
+      { id:'product_launch',     label:'Product Launch',     color:'#3498db', desc:'10× spike on US after 30s' },
+      { id:'global_steady',      label:'Global Steady',      color:'#2ecc71', desc:'Multi-region with diurnal' },
+      { id:'region_failover',    label:'Region Failover',    color:'#e74c3c', desc:'Simulate gateway-us crash' },
+      { id:'global_quota_bypass',label:'Global Quota Bypass',color:'#9b59b6', desc:'Local-only vs geo-distributed quota enforcement' },
     ];
 
     // ─── Fetch helpers ────────────────────────────────────────────────────────
@@ -762,6 +762,7 @@
       const cfg    = data?.config;
       const p1     = data?.phase1;
       const p2     = data?.phase2;
+      const p3     = data?.phase3;
 
       const isIdle = !cfg || status === 'idle';
 
@@ -786,7 +787,7 @@
           <PanelHeader title="Global Quota Bypass Demo" badge={badge}/>
           {isIdle ? (
             <div style={{ padding:'32px 20px', textAlign:'center', color:'#3a3a3a', fontSize:13 }}>
-              Start the <span style={{ color:'#ec4899' }}>Global Quota Bypass</span> scenario from the sidebar
+              Start the <span style={{ color:'#9b59b6' }}>Global Quota Bypass</span> scenario from the sidebar
               to see local-only vs geo-distributed enforcement compared side-by-side.
             </div>
           ) : (
@@ -796,7 +797,7 @@
                 <span>global limit: <span style={{ color:'#aaa' }}>{globalLimit}/min</span></span>
                 <span>attempted: <span style={{ color:'#aaa' }}>{attempts}/region = {attempts * 3} total</span></span>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
                 <BypassColumn
                   title="LOCAL-ONLY MODE"
                   subtitle="3 independent rate limiters · no coordination"
@@ -817,6 +818,20 @@
                   footerReason={p2?.rejected_reason}
                   footerLabel={p2?.result ? (p2.result.includes('prevented') ? 'BYPASS PREVENTED' : p2.result.toUpperCase()) : null}
                   footerOk={p2?.result?.includes('prevented')}
+                />
+                <BypassColumn
+                  title="AGENT-ASSISTED (PREMIUM)"
+                  subtitle={
+                    p3?.agent_decision?.raised_limit
+                      ? `Agent raised: ${p3.agent_decision.original_limit} → ${p3.agent_decision.raised_limit}/region · global ${p3.agent_decision.global_original} → ${p3.agent_decision.global_raised}`
+                      : 'AI agent · predicted spike · premium tier'
+                  }
+                  regions={p3?.regions}
+                  totalAccepted={p3?.total_accepted}
+                  totalRejected={p3?.total_rejected}
+                  color="#3b82f6"
+                  footerLabel={p3?.result ? 'THROUGHPUT IMPROVED' : null}
+                  footerOk={true}
                 />
               </div>
             </div>
@@ -1432,32 +1447,24 @@
         onClick(scenario.id);
       };
 
-      // beam wrapper: 1.5px "border" made of a parent gradient div
       return (
-        <div style={{
-          padding: isSelected ? '1.5px' : 0,
-          borderRadius: 9,
-          background: isSelected ? `linear-gradient(90deg, ${scenario.color}, #a855f7, ${scenario.color})` : 'transparent',
-          backgroundSize: '300% 100%',
-          animation: isSelected ? 'beamSweep 2.5s linear infinite' : 'none',
-          boxShadow: isLive ? `0 0 18px ${scenario.color}40` : 'none',
-          transition: 'box-shadow 0.3s ease',
-        }}>
-          <button ref={ref} onClick={fire} disabled={simRunning} className="scn-btn"
-            style={{ background:isSelected?`${scenario.color}10`:'#0f0f0f', border:isSelected?'none':'1px solid #1e1e1e',
-              borderRadius:isSelected?7.5:8, padding:'9px 10px', textAlign:'left', width:'100%',
-              color:'inherit', position:'relative', overflow:'hidden',
-              cursor:simRunning?'not-allowed':'pointer', opacity:simRunning&&!isLive?.5:1 }}>
-            {ripples.map(r=>(
-              <div key={r.id} style={{ position:'absolute', left:r.x, top:r.y, width:4, height:4, borderRadius:'50%', background:`${scenario.color}40`, transform:'translate(-50%,-50%)', animation:'rippleExpand 0.7s ease-out forwards', pointerEvents:'none' }}/>
-            ))}
-            <div style={{ fontSize:11, fontWeight:700, color:isSelected?scenario.color:'#9ca3af', marginBottom:2, display:'flex', alignItems:'center', gap:6 }}>
-              {scenario.label}
-              {isLive && <span style={{ fontSize:8, background:`${scenario.color}22`, color:scenario.color, padding:'1px 5px', borderRadius:3, fontWeight:800, letterSpacing:'0.05em' }}>LIVE</span>}
-            </div>
-            <div style={{ fontSize:9, color:'#383838', lineHeight:1.3 }}>{scenario.desc}</div>
-          </button>
-        </div>
+        <button ref={ref} onClick={fire} disabled={simRunning} className="scn-btn"
+          style={{ background: isSelected ? '#1a1a1a' : '#0f0f0f',
+            border: `1px solid ${isSelected ? scenario.color : '#1e1e1e'}`,
+            borderRadius: 8, padding:'9px 10px', textAlign:'left', width:'100%',
+            color:'inherit', position:'relative', overflow:'hidden',
+            cursor: simRunning ? 'not-allowed' : 'pointer',
+            opacity: simRunning && !isLive ? 0.5 : 1,
+            transition: 'border-color 0.2s, background 0.2s' }}>
+          {ripples.map(r=>(
+            <div key={r.id} style={{ position:'absolute', left:r.x, top:r.y, width:4, height:4, borderRadius:'50%', background:`${scenario.color}30`, transform:'translate(-50%,-50%)', animation:'rippleExpand 0.7s ease-out forwards', pointerEvents:'none' }}/>
+          ))}
+          <div style={{ fontSize:11, fontWeight:700, color: isSelected ? scenario.color : '#9ca3af', marginBottom:2, display:'flex', alignItems:'center', gap:6 }}>
+            {scenario.label}
+            {isLive && <span style={{ fontSize:8, background:`${scenario.color}22`, color:scenario.color, padding:'1px 5px', borderRadius:3, fontWeight:800, letterSpacing:'0.05em' }}>LIVE</span>}
+          </div>
+          <div style={{ fontSize:9, color:'#505050', lineHeight:1.3 }}>{scenario.desc}</div>
+        </button>
       );
     }
 
@@ -1754,11 +1761,31 @@
     // ─── TierHealthPanel ──────────────────────────────────────────────────────
     const RTooltip = Tooltip;
 
-    function TierHealthPanel({ latency, loading, onExpand, totalRps = 0, agentRunning = false }) {
+    function TierHealthPanel({ latency, loading, onExpand, totalRps = 0, agentRunning = false, overrides = [] }) {
       const noTraffic = totalRps < 0.1;
       const ms       = noTraffic ? 0 : (latency?.tier_latency_ms ?? 0);
       const count    = latency?.congestion_count ?? 0;
       const abusers  = latency?.abusers ?? [];
+
+      // Merge override list into abuser display: any user with an active override
+      // should appear here even if the latency probe hasn't flagged them yet.
+      const overrideMap = Object.fromEntries(overrides.map(ov => [ov.user_id, ov]));
+      const abusersWithOverride = abusers.map(a => ({
+        ...a,
+        hasOverride: !!overrideMap[a.user_id],
+        overrideLimit: overrideMap[a.user_id]?.limit_per_minute ?? a.limit_per_minute,
+      }));
+      const overrideOnlyUsers = overrides.filter(ov => !abusers.some(a => a.user_id === ov.user_id));
+      const displayAbusers = [
+        ...abusersWithOverride,
+        ...overrideOnlyUsers.map(ov => ({
+          user_id: ov.user_id,
+          limit_per_minute: ov.limit_per_minute,
+          hasOverride: true,
+          overrideLimit: ov.limit_per_minute,
+          overrideOnly: true,
+        })),
+      ];
       const spark    = (latency?.tier_latency_spark ?? []).map(p => ({ t: p.t, v: p.v }));
 
       const color  = noTraffic ? '#3a3a3a' : ms >= 100 ? '#ef4444' : ms >= 20 ? '#f59e0b' : '#10b981';
@@ -1768,7 +1795,7 @@
 
       const expandData = { type:'sparkline', title:'Tier Backend Latency', data:spark, color, unit:'ms' };
 
-      if (noTraffic) return (
+      if (noTraffic && overrides.length === 0) return (
         <Panel>
           <PanelHeader title="Legitimate User Health" badge={
             <span style={{ fontSize:10, fontWeight:700, color:'#3a3a3a', letterSpacing:'0.10em',
@@ -1844,7 +1871,7 @@
               </div>
               {loading
                 ? [0,1].map(i => <Skeleton key={i} h={22}/>)
-                : abusers.length === 0
+                : displayAbusers.length === 0
                   ? <div style={{ fontSize:11, color:'#2a2a2a', marginTop:4 }}>
                       {ms < 20
                         ? <span style={{ color:'#10b98199' }}>✓ No abusers detected</span>
@@ -1852,21 +1879,34 @@
                           ? <span style={{ color:'#ef444499' }}>Agent not running</span>
                           : <span style={{ color:'#f59e0b99' }}>Tier congestion — no single abuser</span>}
                     </div>
-                  : abusers.map(a => (
-                    <div key={a.user_id} style={{ display:'flex', alignItems:'center', gap:7,
-                      background:'#ef444412', border:'1px solid #ef444430', borderRadius:6,
-                      padding:'4px 8px', animation:'overrideGlow 2.5s ease-in-out infinite' }}>
-                      <div style={{ width:5, height:5, borderRadius:'50%', background:'#ef4444', flexShrink:0 }}/>
-                      <span style={{ fontSize:10, fontFamily:'monospace', color:'#f3f4f6', flex:1 }}>
-                        {a.user_id}
-                      </span>
-                      <span style={{ fontSize:9, color:'#ef4444', fontWeight:700 }}>
-                        {a.limit_per_minute}/min
-                      </span>
-                    </div>
-                  ))
+                  : displayAbusers.map(a => {
+                    const subdued = a.hasOverride;
+                    const dotColor   = subdued ? '#f59e0b' : '#ef4444';
+                    const bgColor    = subdued ? '#f59e0b12' : '#ef444412';
+                    const borderColor= subdued ? '#f59e0b30' : '#ef444430';
+                    const limitColor = subdued ? '#f59e0b'   : '#ef4444';
+                    return (
+                      <div key={a.user_id} style={{ display:'flex', alignItems:'center', gap:7,
+                        background:bgColor, border:`1px solid ${borderColor}`, borderRadius:6,
+                        padding:'4px 8px', animation:'overrideGlow 2.5s ease-in-out infinite' }}>
+                        <div style={{ width:5, height:5, borderRadius:'50%', background:dotColor, flexShrink:0 }}/>
+                        <span style={{ fontSize:10, fontFamily:'monospace', color:'#f3f4f6', flex:1 }}>
+                          {a.user_id}
+                        </span>
+                        {subdued && (
+                          <span style={{ fontSize:8, color:'#f59e0b', fontWeight:700, letterSpacing:'0.06em',
+                            background:'#f59e0b18', border:'1px solid #f59e0b30', borderRadius:3, padding:'1px 4px' }}>
+                            SUBDUED
+                          </span>
+                        )}
+                        <span style={{ fontSize:9, color:limitColor, fontWeight:700 }}>
+                          {a.overrideLimit}/min
+                        </span>
+                      </div>
+                    );
+                  })
               }
-              {abusers.length > 0 && ms < 20 && (
+              {displayAbusers.length > 0 && ms < 20 && (
                 <div style={{ fontSize:9, color:'#10b981', marginTop:3, lineHeight:1.4 }}>
                   ✓ Throttled — tier recovered
                 </div>
@@ -2028,7 +2068,7 @@
                 );
               })()}
 
-              <TierHealthPanel latency={latencyData} loading={loading} onExpand={openModal} totalRps={metrics?.total_rps ?? 0} agentRunning={!!ctrlStatus?.agent?.running}/>
+              <TierHealthPanel latency={latencyData} loading={loading} onExpand={openModal} totalRps={metrics?.total_rps ?? 0} agentRunning={!!ctrlStatus?.agent?.running} overrides={overrides}/>
 
               <ModelPerformancePanel modelData={modelMetrics} onExpand={openModal}/>
 
